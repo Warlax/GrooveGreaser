@@ -18,4 +18,5 @@
     <string name="error_less_than_one_rep">Sorry, cannot do less than one rep.</string>
     <string name="hint_reps">Reps</string>
     <string name="reps_added">💪 %d reps added! 💪</string>
+    <string name="create_challenge_spinner_item">Create new challenge&#x2026;</string>
 </resources>

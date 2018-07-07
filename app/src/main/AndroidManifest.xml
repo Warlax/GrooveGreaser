@@ -18,13 +18,8 @@
           <category android:name="android.intent.category.LAUNCHER"/>
         </intent-filter>
       </activity>
-      <activity android:name=".activity.ChallengesActivity"/>
-      <activity
-          android:name=".activity.CreateChallengeActivity"
-          android:parentActivityName=".activity.ChallengesActivity"/>
-      <activity
-          android:name=".activity.ChallengeActivity"
-          android:parentActivityName=".activity.ChallengesActivity"/>
+      <activity android:name=".activity.CreateChallengeActivity"/>
+      <activity android:name=".activity.ChallengeActivity"/>
 
     </application>
 

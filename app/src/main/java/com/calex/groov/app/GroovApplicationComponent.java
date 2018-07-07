@@ -1,7 +1,6 @@
 package com.calex.groov.app;
 
 import com.calex.groov.activity.ChallengeActivity;
-import com.calex.groov.activity.ChallengesActivity;
 import com.calex.groov.activity.CreateChallengeActivity;
 import com.calex.groov.activity.HomeActivity;
 import com.calex.groov.workers.CreateChallengeWorker;
@@ -22,7 +21,6 @@ import dagger.Component;
 @GroovApplicationScope
 public interface GroovApplicationComponent {
   void inject(HomeActivity activity);
-  void inject(ChallengesActivity activity);
   void inject(CreateChallengeActivity activity);
   void inject(ChallengeActivity activity);
 

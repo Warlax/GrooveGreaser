@@ -23,24 +23,34 @@ import com.calex.groov.view.ChallengeView;
 import com.calex.groov.workers.RecordSetWorker;
 import com.google.common.base.Preconditions;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
-public class ChallengePresenter {
+public class ChallengePresenter implements ChallengeView.Callbacks {
 
   private static final long LAST_REP_TEXT_UPDATE_INTERVAL_MS = TimeUnit.MINUTES.toMillis(1);
   private static final int NOT_LOADED = -1;
   private static final int INITIAL_LOAD = -1;
+
+  public interface CreateNewChallengeFlow {
+    void start();
+  }
 
   private final Context context;
   private final ChallengeView view;
   private final Clock clock;
   private final Handler handler;
   private final Object handlerToken;
+  private final GroovDatabase database;
+  private final SharedPreferences sharedPreferences;
+  private final LifecycleOwner lifecycleOwner;
+  private final CreateNewChallengeFlow createNewChallengeFlow;
 
+  private List<Challenge> challenges;
   private Challenge challenge;
   private RepSet latestRepSet;
   private int totalReps;
@@ -53,29 +63,25 @@ public class ChallengePresenter {
       ChallengeView view,
       Clock clock,
       SharedPreferences sharedPreferences,
-      Handler handler) {
+      Handler handler,
+      CreateNewChallengeFlow createNewChallengeFlow) {
     this.context = Preconditions.checkNotNull(context);
     this.view = Preconditions.checkNotNull(view);
     this.clock = Preconditions.checkNotNull(clock);
     this.handler = Preconditions.checkNotNull(handler);
-    totalReps = NOT_LOADED;
-    handlerToken = new Object();
-    view.setCallbacks(new ChallengeView.Callbacks() {
-      @Override
-      public void onDidButtonClicked() {
-        ChallengePresenter.this.onDidButtonClicked();
-      }
+    this.database = Preconditions.checkNotNull(database);
+    this.sharedPreferences = Preconditions.checkNotNull(sharedPreferences);
+    this.lifecycleOwner = Preconditions.checkNotNull(lifecycleOwner);
+    this.createNewChallengeFlow = Preconditions.checkNotNull(createNewChallengeFlow);
 
-      @Override
-      public void onDidDifferentRepsClicked() {
-        ChallengePresenter.this.onDidDifferentRepsClicked();
-      }
-    });
+    handlerToken = new Object();
+    view.setCallbacks(this);
     lifecycleOwner.getLifecycle().addObserver((GenericLifecycleObserver) (source, event) -> {
       switch (event) {
         case ON_RESUME:
           handler.postDelayed(
               this::onMinuteElapsed, handlerToken, LAST_REP_TEXT_UPDATE_INTERVAL_MS);
+          loadData(challengeKey);
           break;
 
         case ON_PAUSE:
@@ -83,54 +89,10 @@ public class ChallengePresenter {
           break;
       }
     });
-    database.challengeDao().getAsLiveData(challengeKey)
-        .observe(lifecycleOwner, this::onChallengeChanged);
-    database.repSetDao().totalReps(
-        challengeKey, clock.todayStartTimestamp(), clock.todayEndTimestamp()).observe(
-            lifecycleOwner, this::onRepsChanged);
-    database.repSetDao().latestRepSet(
-        challengeKey, clock.todayStartTimestamp(), clock.todayEndTimestamp()).observe(
-            lifecycleOwner, this::onLatestRepSetChanged);
-    sharedPreferences.edit().putLong(Extras.KEY, challengeKey).apply();
   }
 
-  private void onLatestRepSetChanged(RepSet latestRepSet) {
-    this.latestRepSet = latestRepSet;
-    updateView();
-  }
-
-  protected void onChallengeChanged(Challenge challenge) {
-    this.challenge = challenge;
-    updateView();
-  }
-
-  private void onRepsChanged(@Nullable Integer totalReps) {
-    if (totalReps == null || this.totalReps == totalReps) {
-      return;
-    }
-
-    int diff = this.totalReps != NOT_LOADED ? totalReps - this.totalReps : INITIAL_LOAD;
-    if (diff > 0) {
-      Toast.makeText(
-          context, context.getString(R.string.reps_added, diff), Toast.LENGTH_SHORT).show();
-    }
-    this.totalReps = totalReps;
-    updateView();
-  }
-
-  private void updateView() {
-    if (challenge == null) {
-      return;
-    }
-
-    view.setCount(totalReps);
-    view.setChallengeName(challenge.getName());
-    view.setDidButtonText(
-        context.getString(R.string.did_button_template, challenge.getRepsInSetGoal()));
-    view.setLastSetText(generateLastSetText());
-  }
-
-  private void onDidButtonClicked() {
+  @Override
+  public void onDidButtonClicked() {
     WorkManager.getInstance().enqueue(new OneTimeWorkRequest.Builder(RecordSetWorker.class)
         .setInputData(new Data.Builder()
             .putLong(Extras.KEY, challenge.getKey())
@@ -139,7 +101,8 @@ public class ChallengePresenter {
         .build());
   }
 
-  private void onDidDifferentRepsClicked() {
+  @Override
+  public void onDidDifferentRepsClicked() {
     View view = View.inflate(context, R.layout.reps_input, null);
     EditText repsView = view.findViewById(R.id.reps);
     InputMethodManager imm =
@@ -170,6 +133,83 @@ public class ChallengePresenter {
         .show();
     repsView.requestFocus();
     imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+  }
+
+  @Override
+  public void onCreateNewChallengeButtonClicked() {
+    createNewChallengeFlow.start();
+  }
+
+  @Override
+  public void onSwitchChallenge(long challengeKey) {
+    loadData(challengeKey);
+  }
+
+  private void loadData(long challengeKey) {
+    totalReps = NOT_LOADED;
+    database.challengeDao().getAllAsLiveData().observe(
+        lifecycleOwner, this::onChallengesChanged);
+    database.challengeDao().getAsLiveData(challengeKey)
+        .observe(lifecycleOwner, this::onChallengeChanged);
+    database.repSetDao().totalReps(
+        challengeKey, clock.todayStartTimestamp(), clock.todayEndTimestamp()).observe(
+        lifecycleOwner, this::onRepsChanged);
+    database.repSetDao().latestRepSet(
+        challengeKey, clock.todayStartTimestamp(), clock.todayEndTimestamp()).observe(
+        lifecycleOwner, this::onLatestRepSetChanged);
+    sharedPreferences.edit().putLong(Extras.KEY, challengeKey).apply();
+  }
+
+  private void onLatestRepSetChanged(RepSet latestRepSet) {
+    this.latestRepSet = latestRepSet;
+    updateView();
+  }
+
+  private void onChallengesChanged(List<Challenge> challenges) {
+    this.challenges = challenges;
+    updateView();
+  }
+
+  private void onChallengeChanged(Challenge challenge) {
+    this.challenge = challenge;
+    updateView();
+  }
+
+  private void onRepsChanged(@Nullable Integer totalReps) {
+    if (totalReps == null) {
+      totalReps = 0;
+    }
+
+    if (this.totalReps == totalReps) {
+      return;
+    }
+
+    int diff = this.totalReps != NOT_LOADED ? totalReps - this.totalReps : INITIAL_LOAD;
+    if (diff > 0) {
+      Toast.makeText(
+          context, context.getString(R.string.reps_added, diff), Toast.LENGTH_SHORT).show();
+    }
+    this.totalReps = totalReps;
+    updateView();
+  }
+
+  private void updateView() {
+    if (challenges == null || challenge == null || totalReps == NOT_LOADED) {
+      return;
+    }
+
+    view.setCount(totalReps);
+    int currentChallengePosition = 0;
+    for (int position = 0; position < challenges.size(); position++) {
+      if (this.challenge.getKey() == challenges.get(position).getKey()) {
+        currentChallengePosition = position;
+        break;
+      }
+    }
+    view.setChallenges(challenges, currentChallengePosition);
+    view.setDidButtonText(
+        context.getString(R.string.did_button_template, challenge.getRepsInSetGoal()));
+    view.setLastSetText(generateLastSetText());
   }
 
   private void onMinuteElapsed() {

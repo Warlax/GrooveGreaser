@@ -40,6 +40,14 @@ public class ChallengeActivity extends AppCompatActivity {
 
     ChallengeView view = new ChallengeView(findViewById(android.R.id.content));
     new ChallengePresenter(
-        challengeKey, this, this, database, view, clock, sharedPreferences, handler);
+        challengeKey,
+        this,
+        this,
+        database,
+        view,
+        clock,
+        sharedPreferences,
+        handler,
+        () -> startActivity(CreateChallengeActivity.newIntent(ChallengeActivity.this)));
   }
 }
