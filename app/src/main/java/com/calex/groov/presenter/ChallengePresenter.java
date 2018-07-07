@@ -11,6 +11,7 @@ import android.text.format.DateUtils;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.calex.groov.R;
 import com.calex.groov.activity.Extras;
@@ -31,6 +32,8 @@ import androidx.work.WorkManager;
 public class ChallengePresenter {
 
   private static final long LAST_REP_TEXT_UPDATE_INTERVAL_MS = TimeUnit.MINUTES.toMillis(1);
+  private static final int NOT_LOADED = -1;
+  private static final int INITIAL_LOAD = -1;
 
   private final Context context;
   private final ChallengeView view;
@@ -55,6 +58,7 @@ public class ChallengePresenter {
     this.view = Preconditions.checkNotNull(view);
     this.clock = Preconditions.checkNotNull(clock);
     this.handler = Preconditions.checkNotNull(handler);
+    totalReps = NOT_LOADED;
     handlerToken = new Object();
     view.setCallbacks(new ChallengeView.Callbacks() {
       @Override
@@ -101,7 +105,16 @@ public class ChallengePresenter {
   }
 
   private void onRepsChanged(@Nullable Integer totalReps) {
-    this.totalReps = totalReps != null ? totalReps : 0;
+    if (totalReps == null || this.totalReps == totalReps) {
+      return;
+    }
+
+    int diff = this.totalReps != NOT_LOADED ? totalReps - this.totalReps : INITIAL_LOAD;
+    if (diff > 0) {
+      Toast.makeText(
+          context, context.getString(R.string.reps_added, diff), Toast.LENGTH_SHORT).show();
+    }
+    this.totalReps = totalReps;
     updateView();
   }
 
@@ -129,10 +142,12 @@ public class ChallengePresenter {
   private void onDidDifferentRepsClicked() {
     View view = View.inflate(context, R.layout.reps_input, null);
     EditText repsView = view.findViewById(R.id.reps);
+    InputMethodManager imm =
+        (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
     new AlertDialog.Builder(context)
         .setView(view)
         .setPositiveButton(R.string.ok, (dialogInterface, which) -> {
-            int reps =
+          int reps =
               Integer.parseInt(repsView.getText().toString());
           if (reps < 1) {
             new AlertDialog.Builder(context)
@@ -150,10 +165,10 @@ public class ChallengePresenter {
                   .build());
         })
         .setNegativeButton(R.string.cancel, null)
+        .setOnDismissListener(
+            dialogInterface -> imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0))
         .show();
     repsView.requestFocus();
-    InputMethodManager imm =
-        (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
     imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
   }
 
