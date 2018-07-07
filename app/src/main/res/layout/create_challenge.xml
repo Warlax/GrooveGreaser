@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+  <LinearLayout
+      android:orientation="vertical"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:gravity="center"
+      android:paddingStart="32dp"
+      android:paddingEnd="32dp">
+
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+      <EditText
+          android:id="@+id/name"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:hint="@string/hint_challenge_name"/>
+
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+      <EditText
+          android:id="@+id/reps_in_set"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:hint="@string/hint_reps_in_set"
+          android:inputType="numberDecimal"/>
+
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+      <EditText
+          android:id="@+id/rest_duration"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:hint="@string/hint_rest_duration"
+          android:inputType="numberDecimal"/>
+
+    </android.support.design.widget.TextInputLayout>
+
+    <CheckBox
+        android:id="@+id/remind"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/remind"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+      <Button
+          android:id="@+id/cancel_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="@string/cancel"
+          android:textAllCaps="true"
+          style="?buttonBarNegativeButtonStyle"/>
+
+      <Button
+          android:id="@+id/create_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="@string/create_challenge_button"
+          android:textAllCaps="true"
+          style="?buttonBarPositiveButtonStyle"/>
+
+    </LinearLayout>
+
+  </LinearLayout>
+
+  <FrameLayout
+      android:id="@+id/progress"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:background="#88000000">
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"/>
+
+  </FrameLayout>
+
+</FrameLayout>
