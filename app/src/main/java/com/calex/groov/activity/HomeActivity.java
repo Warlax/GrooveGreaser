@@ -33,7 +33,7 @@ public class HomeActivity extends AppCompatActivity {
         this,
         challenge -> {
           if (challenge != null) {
-            startActivity(ChallengeActivity.newIntent(this, challenge.getKey(), false));
+            startActivity(ChallengeActivity.newIntent(this, challenge.getKey()));
           } else {
             startActivity(ChallengesActivity.newIntent(this));
           }

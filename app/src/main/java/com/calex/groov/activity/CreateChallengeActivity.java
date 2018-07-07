@@ -71,8 +71,7 @@ public class CreateChallengeActivity extends AppCompatActivity {
             startActivity(
                 ChallengeActivity.newIntent(
                     CreateChallengeActivity.this,
-                    workStatus.getOutputData().getLong(Extras.KEY, -1),
-                    false));
+                    workStatus.getOutputData().getLong(Extras.KEY, -1)));
           }
         });
   }

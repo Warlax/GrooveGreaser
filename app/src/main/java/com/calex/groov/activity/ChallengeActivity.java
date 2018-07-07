@@ -19,10 +19,9 @@ import javax.inject.Inject;
 
 public class ChallengeActivity extends AppCompatActivity {
 
-  public static Intent newIntent(Context context, long challengeKey, boolean fromChallengeList) {
+  public static Intent newIntent(Context context, long challengeKey) {
     Intent intent = new Intent(context, ChallengeActivity.class);
     intent.putExtra(Extras.KEY, challengeKey);
-    intent.putExtra(Extras.FROM_CHALLENGE_LIST, fromChallengeList);
     return intent;
   }
 
@@ -42,7 +41,5 @@ public class ChallengeActivity extends AppCompatActivity {
     ChallengeView view = new ChallengeView(findViewById(android.R.id.content));
     new ChallengePresenter(
         challengeKey, this, this, database, view, clock, sharedPreferences, handler);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(
-        getIntent().getBooleanExtra(Extras.FROM_CHALLENGE_LIST, false));
   }
 }

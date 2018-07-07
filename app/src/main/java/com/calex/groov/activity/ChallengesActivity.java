@@ -69,7 +69,7 @@ public class ChallengesActivity extends AppCompatActivity {
   }
 
   private void onChallengeItemClicked(Challenge challenge) {
-    startActivity(ChallengeActivity.newIntent(this, challenge.getKey(), true));
+    startActivity(ChallengeActivity.newIntent(this, challenge.getKey()));
   }
 
   private class ChallengeAdapter extends RecyclerView.Adapter<ChallengeViewHolder> {
